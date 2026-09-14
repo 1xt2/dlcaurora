@@ -216,5 +216,3 @@ public class ClickGuiScreen extends Screen {
         return false;
     }
 }
-
-
