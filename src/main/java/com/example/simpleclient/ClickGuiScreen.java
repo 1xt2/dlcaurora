@@ -2,6 +2,7 @@ package com.example.simpleclient;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -53,6 +54,7 @@ public class ClickGuiScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         // The PNG is the actual visual layer of the GUI.
         context.drawTexture(
+                RenderLayer::getGuiTextured,
                 GUI_TEXTURE,
                 0,
                 0,
@@ -216,5 +218,3 @@ public class ClickGuiScreen extends Screen {
         return false;
     }
 }
-
-
