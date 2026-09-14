@@ -22,6 +22,8 @@ public class ClickGuiScreen extends Screen {
     private static final int IMAGE_HEIGHT = 992;
 
     // Hitboxes are expressed in the artwork's original pixel coordinates.
+    // The artwork is rendered smaller and centered so the whole GUI fits the screen.
+    private static final float GUI_SCALE = 0.72F;
     private static final int AUTO_SPRINT_X = 360;
     private static final int AUTO_SPRINT_Y = 300;
     private static final int AUTO_SPRINT_W = 265;
@@ -52,28 +54,40 @@ public class ClickGuiScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        // Keep the real Minecraft world behind the compact GUI.
+        renderBackground(context, mouseX, mouseY, delta);
+
         // The PNG is the actual visual layer of the GUI.
+        float initialScale = Math.min((float) width / IMAGE_WIDTH, (float) height / IMAGE_HEIGHT);
+        float actualScale = Math.min(GUI_SCALE, initialScale * 0.92F);
+        int drawW = Math.round(IMAGE_WIDTH * actualScale);
+        int drawH = Math.round(IMAGE_HEIGHT * actualScale);
+        int offsetX = (width - drawW) / 2;
+        int offsetY = (height - drawH) / 2;
+
         context.drawTexture(
                 RenderLayer::getGuiTextured,
                 GUI_TEXTURE,
-                0,
-                0,
+                offsetX,
+                offsetY,
                 0.0F,
                 0.0F,
-                width,
-                height,
+                drawW,
+                drawH,
                 IMAGE_WIDTH,
                 IMAGE_HEIGHT
         );
 
-        float sx = (float) width / IMAGE_WIDTH;
-        float sy = (float) height / IMAGE_HEIGHT;
+        float sx = actualScale;
+        float sy = actualScale;
+        float ox = offsetX;
+        float oy = offsetY;
 
         // Cover the static switches from the artwork and draw their live state.
         drawLiveToggle(
                 context,
-                Math.round(AUTO_TOGGLE_X * sx),
-                Math.round(AUTO_TOGGLE_Y * sy),
+                Math.round(ox + AUTO_TOGGLE_X * sx),
+                Math.round(oy + AUTO_TOGGLE_Y * sy),
                 Math.round(TOGGLE_W * sx),
                 Math.round(TOGGLE_H * sy),
                 SimpleClient.isAutoSprint()
@@ -81,8 +95,8 @@ public class ClickGuiScreen extends Screen {
 
         drawLiveToggle(
                 context,
-                Math.round(FULL_TOGGLE_X * sx),
-                Math.round(FULL_TOGGLE_Y * sy),
+                Math.round(ox + FULL_TOGGLE_X * sx),
+                Math.round(oy + FULL_TOGGLE_Y * sy),
                 Math.round(TOGGLE_W * sx),
                 Math.round(TOGGLE_H * sy),
                 SimpleClient.isFullbright()
@@ -90,11 +104,11 @@ public class ClickGuiScreen extends Screen {
 
         // A very subtle hover highlight over the active clickable rows.
         if (insideImageRect(mouseX, mouseY, AUTO_SPRINT_X, AUTO_SPRINT_Y, AUTO_SPRINT_W, AUTO_SPRINT_H)) {
-            drawHover(context, AUTO_SPRINT_X, AUTO_SPRINT_Y, AUTO_SPRINT_W, AUTO_SPRINT_H, sx, sy);
+            drawHover(context, AUTO_SPRINT_X, AUTO_SPRINT_Y, AUTO_SPRINT_W, AUTO_SPRINT_H, sx, sy, ox, oy);
         }
 
         if (insideImageRect(mouseX, mouseY, FULLBRIGHT_X, FULLBRIGHT_Y, FULLBRIGHT_W, FULLBRIGHT_H)) {
-            drawHover(context, FULLBRIGHT_X, FULLBRIGHT_Y, FULLBRIGHT_W, FULLBRIGHT_H, sx, sy);
+            drawHover(context, FULLBRIGHT_X, FULLBRIGHT_Y, FULLBRIGHT_W, FULLBRIGHT_H, sx, sy, ox, oy);
         }
     }
 
@@ -134,10 +148,12 @@ public class ClickGuiScreen extends Screen {
             int imageW,
             int imageH,
             float sx,
-            float sy
+            float sy,
+            float ox,
+            float oy
     ) {
-        int x = Math.round(imageX * sx);
-        int y = Math.round(imageY * sy);
+        int x = Math.round(ox + imageX * sx);
+        int y = Math.round(oy + imageY * sy);
         int w = Math.round(imageW * sx);
         int h = Math.round(imageH * sy);
 
@@ -177,13 +193,19 @@ public class ClickGuiScreen extends Screen {
             int imageW,
             int imageH
     ) {
-        float sx = (float) width / IMAGE_WIDTH;
-        float sy = (float) height / IMAGE_HEIGHT;
+        float actualScale = Math.min(
+                GUI_SCALE,
+                Math.min((float) width / IMAGE_WIDTH, (float) height / IMAGE_HEIGHT) * 0.92F
+        );
+        int drawW = Math.round(IMAGE_WIDTH * actualScale);
+        int drawH = Math.round(IMAGE_HEIGHT * actualScale);
+        double ox = (width - drawW) / 2.0;
+        double oy = (height - drawH) / 2.0;
 
-        double x = imageX * sx;
-        double y = imageY * sy;
-        double w = imageW * sx;
-        double h = imageH * sy;
+        double x = ox + imageX * actualScale;
+        double y = oy + imageY * actualScale;
+        double w = imageW * actualScale;
+        double h = imageH * actualScale;
 
         return mouseX >= x
                 && mouseX <= x + w
@@ -218,3 +240,4 @@ public class ClickGuiScreen extends Screen {
         return false;
     }
 }
+
