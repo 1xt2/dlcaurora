@@ -3,35 +3,47 @@ package com.example.simpleclient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
+/**
+ * Image-based ClickGUI.
+ *
+ * The supplied UI artwork is used as the visual base, while the two
+ * module switches remain live and are controlled by mouse clicks.
+ */
 public class ClickGuiScreen extends Screen {
 
-    private static final int BG = 0xB90A0D14;
-    private static final int PANEL = 0xE51A1D26;
-    private static final int PANEL_HOVER = 0xF02A2E3A;
-    private static final int PANEL_ACTIVE = 0xF0252A3B;
-    private static final int HEADER = 0xE91A1D26;
-    private static final int BORDER = 0xFF343947;
-    private static final int TEXT = 0xFFF2F3F7;
-    private static final int MUTED = 0xFF9DA3B2;
-    private static final int ACCENT = 0xFF6675FF;
-    private static final int ACCENT_LIGHT = 0xFFB9C0FF;
-    private static final int TOGGLE_OFF = 0xFF3B404D;
-    private static final int TOGGLE_KNOB_OFF = 0xFFD8DCE6;
+    private static final Identifier GUI_TEXTURE =
+            Identifier.of("simpleclient", "textures/gui/clickgui.png");
 
-    private static final int PANEL_GAP = 12;
-    private static final int SIDE_MARGIN = 16;
-    private static final int TOP_MARGIN = 18;
-    private static final int HEADER_HEIGHT = 54;
-    private static final int PANEL_TOP_GAP = 12;
+    // Original generated artwork size.
+    private static final int IMAGE_WIDTH = 1586;
+    private static final int IMAGE_HEIGHT = 992;
 
-    private final Category[] categories = {
-            new Category("Combat", 0),
-            new Category("Movement", 1),
-            new Category("Render", 1),
-            new Category("Player", 0),
-            new Category("Misc", 0)
-    };
+    // Hitboxes are expressed in the artwork's original pixel coordinates.
+    private static final int AUTO_SPRINT_X = 360;
+    private static final int AUTO_SPRINT_Y = 300;
+    private static final int AUTO_SPRINT_W = 265;
+    private static final int AUTO_SPRINT_H = 62;
+
+    private static final int FULLBRIGHT_X = 655;
+    private static final int FULLBRIGHT_Y = 300;
+    private static final int FULLBRIGHT_W = 270;
+    private static final int FULLBRIGHT_H = 62;
+
+    private static final int CLOSE_X = 1335;
+    private static final int CLOSE_Y = 110;
+    private static final int CLOSE_W = 125;
+    private static final int CLOSE_H = 70;
+
+    // Toggle locations in the artwork. These are repainted so the image's
+    // static OFF state is replaced by the real module state.
+    private static final int AUTO_TOGGLE_X = 540;
+    private static final int AUTO_TOGGLE_Y = 309;
+    private static final int FULL_TOGGLE_X = 840;
+    private static final int FULL_TOGGLE_Y = 309;
+    private static final int TOGGLE_W = 64;
+    private static final int TOGGLE_H = 36;
 
     public ClickGuiScreen() {
         super(Text.literal("dlcaurora"));
@@ -39,249 +51,96 @@ public class ClickGuiScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        // Keep the Minecraft world visible behind the GUI.
-        renderBackground(context, mouseX, mouseY, delta);
-
-        // Dark translucent overlay.
-        context.fill(0, 0, width, height, BG);
-
-        int outerX = SIDE_MARGIN;
-        int outerY = TOP_MARGIN;
-        int outerW = width - SIDE_MARGIN * 2;
-
-        // Top header.
-        drawRoundedRect(context, outerX, outerY, outerW, HEADER_HEIGHT, 14, HEADER);
-
-        // Logo.
-        drawRoundedRect(context, outerX + 14, outerY + 14, 26, 26, 13, ACCENT);
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal("●"),
-                outerX + 20,
-                outerY + 17,
-                0xFFFFFFFF
+        // The PNG is the actual visual layer of the GUI.
+        context.drawTexture(
+                GUI_TEXTURE,
+                0,
+                0,
+                0.0F,
+                0.0F,
+                width,
+                height,
+                IMAGE_WIDTH,
+                IMAGE_HEIGHT
         );
 
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal("dlcaurora"),
-                outerX + 50,
-                outerY + 15,
-                TEXT
-        );
+        float sx = (float) width / IMAGE_WIDTH;
+        float sy = (float) height / IMAGE_HEIGHT;
 
-        // Version badge.
-        int versionX = outerX + 50 + textRenderer.getWidth("dlcaurora") + 10;
-        drawRoundedRect(context, versionX, outerY + 13, 42, 28, 10, 0xFF30364A);
-        context.drawCenteredTextWithShadow(
-                textRenderer,
-                Text.literal("1.0.0"),
-                versionX + 21,
-                outerY + 19,
-                ACCENT_LIGHT
-        );
-
-        // Top-right controls.
-        int closeX = outerX + outerW - 48;
-        drawRoundedRect(context, closeX, outerY + 9, 38, 36, 10, 0xFF242936);
-        context.drawCenteredTextWithShadow(
-                textRenderer,
-                Text.literal("×"),
-                closeX + 19,
-                outerY + 16,
-                TEXT
-        );
-
-        int panelY = outerY + HEADER_HEIGHT + PANEL_TOP_GAP;
-        int availableW = outerW - PANEL_GAP * 4;
-        int panelW = availableW / 5;
-
-        for (int i = 0; i < categories.length; i++) {
-            int panelX = outerX + i * (panelW + PANEL_GAP);
-            drawCategory(context, categories[i], panelX, panelY, panelW, mouseX, mouseY);
-        }
-
-        // Bottom hint.
-        String hint = "Правый Shift — открыть меню";
-        int hintW = textRenderer.getWidth(hint) + 38;
-        int hintX = width / 2 - hintW / 2;
-        int hintY = height - 48;
-
-        drawRoundedRect(context, hintX, hintY, hintW, 32, 16, 0xE51A1D26);
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal("▣"),
-                hintX + 12,
-                hintY + 9,
-                ACCENT_LIGHT
-        );
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal(hint),
-                hintX + 30,
-                hintY + 9,
-                MUTED
-        );
-    }
-
-    private void drawCategory(
-            DrawContext context,
-            Category category,
-            int x,
-            int y,
-            int w,
-            int mouseX,
-            int mouseY
-    ) {
-        int panelH = height - y - 62;
-
-        drawRoundedRect(context, x, y, w, panelH, 14, PANEL);
-
-        // Subtle border.
-        drawRoundedRectOutline(context, x, y, w, panelH, 14, BORDER);
-
-        // Category title.
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal(category.name),
-                x + 16,
-                y + 14,
-                TEXT
-        );
-
-        String count = String.valueOf(category.count);
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal(count),
-                x + w - 31 - textRenderer.getWidth(count),
-                y + 15,
-                MUTED
-        );
-
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal("›"),
-                x + w - 20,
-                y + 13,
-                ACCENT_LIGHT
-        );
-
-        // Header divider.
-        context.fill(x + 12, y + 42, x + w - 12, y + 43, 0xFF303541);
-
-        int rowY = y + 52;
-
-        if (category.name.equals("Movement")) {
-            drawModuleRow(
-                    context,
-                    "Auto Sprint",
-                    x,
-                    rowY,
-                    w,
-                    SimpleClient.isAutoSprint(),
-                    mouseX,
-                    mouseY,
-                    true
-            );
-        } else if (category.name.equals("Render")) {
-            drawModuleRow(
-                    context,
-                    "Full Bright",
-                    x,
-                    rowY,
-                    w,
-                    SimpleClient.isFullbright(),
-                    mouseX,
-                    mouseY,
-                    true
-            );
-        } else {
-            String empty = "No modules yet";
-            context.drawCenteredTextWithShadow(
-                    textRenderer,
-                    Text.literal(empty),
-                    x + w / 2,
-                    y + 76,
-                    MUTED
-            );
-        }
-    }
-
-    private void drawModuleRow(
-            DrawContext context,
-            String name,
-            int x,
-            int y,
-            int w,
-            boolean enabled,
-            int mouseX,
-            int mouseY,
-            boolean toggle
-    ) {
-        int rowH = 40;
-        boolean hovered = mouseX >= x + 5
-                && mouseX <= x + w - 5
-                && mouseY >= y
-                && mouseY <= y + rowH;
-
-        if (hovered || enabled) {
-            drawRoundedRect(
-                    context,
-                    x + 6,
-                    y,
-                    w - 12,
-                    rowH,
-                    9,
-                    hovered ? PANEL_HOVER : PANEL_ACTIVE
-            );
-        }
-
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal(name),
-                x + 18,
-                y + 13,
-                TEXT
-        );
-
-        // Three dots like the reference design.
-        context.drawTextWithShadow(
-                textRenderer,
-                Text.literal("•••"),
-                x + w - 48,
-                y + 13,
-                MUTED
-        );
-
-        if (toggle) {
-            drawToggle(context, x + w - 41, y + 9, enabled);
-        }
-    }
-
-    private void drawToggle(DrawContext context, int x, int y, boolean enabled) {
-        int w = 34;
-        int h = 20;
-
-        drawRoundedRect(
+        // Cover the static switches from the artwork and draw their live state.
+        drawLiveToggle(
                 context,
-                x,
-                y,
-                w,
-                h,
-                10,
-                enabled ? ACCENT : TOGGLE_OFF
+                Math.round(AUTO_TOGGLE_X * sx),
+                Math.round(AUTO_TOGGLE_Y * sy),
+                Math.round(TOGGLE_W * sx),
+                Math.round(TOGGLE_H * sy),
+                SimpleClient.isAutoSprint()
         );
 
-        int knobX = enabled ? x + w - 18 : x + 2;
+        drawLiveToggle(
+                context,
+                Math.round(FULL_TOGGLE_X * sx),
+                Math.round(FULL_TOGGLE_Y * sy),
+                Math.round(TOGGLE_W * sx),
+                Math.round(TOGGLE_H * sy),
+                SimpleClient.isFullbright()
+        );
+
+        // A very subtle hover highlight over the active clickable rows.
+        if (insideImageRect(mouseX, mouseY, AUTO_SPRINT_X, AUTO_SPRINT_Y, AUTO_SPRINT_W, AUTO_SPRINT_H)) {
+            drawHover(context, AUTO_SPRINT_X, AUTO_SPRINT_Y, AUTO_SPRINT_W, AUTO_SPRINT_H, sx, sy);
+        }
+
+        if (insideImageRect(mouseX, mouseY, FULLBRIGHT_X, FULLBRIGHT_Y, FULLBRIGHT_W, FULLBRIGHT_H)) {
+            drawHover(context, FULLBRIGHT_X, FULLBRIGHT_Y, FULLBRIGHT_W, FULLBRIGHT_H, sx, sy);
+        }
+    }
+
+    private void drawLiveToggle(
+            DrawContext context,
+            int x,
+            int y,
+            int w,
+            int h,
+            boolean enabled
+    ) {
+        // Match the smooth pill style from the artwork.
+        int track = enabled ? 0xFF6878FF : 0xFF343B50;
+        int knob = 0xFFF4F6FF;
+
+        drawRoundedRect(context, x, y, w, h, h / 2, track);
+
+        int knobSize = Math.max(10, h - 8);
+        int knobX = enabled ? x + w - knobSize - 4 : x + 4;
+        int knobY = y + (h - knobSize) / 2;
+
         drawRoundedRect(
                 context,
                 knobX,
-                y + 2,
-                16,
-                16,
-                8,
-                enabled ? 0xFFFFFFFF : TOGGLE_KNOB_OFF
+                knobY,
+                knobSize,
+                knobSize,
+                knobSize / 2,
+                knob
         );
+    }
+
+    private void drawHover(
+            DrawContext context,
+            int imageX,
+            int imageY,
+            int imageW,
+            int imageH,
+            float sx,
+            float sy
+    ) {
+        int x = Math.round(imageX * sx);
+        int y = Math.round(imageY * sy);
+        int w = Math.round(imageW * sx);
+        int h = Math.round(imageH * sy);
+
+        // Very subtle, transparent highlight; the artwork remains visible.
+        context.fill(x, y, x + w, y + h, 0x16000000);
     }
 
     @Override
@@ -290,34 +149,17 @@ public class ClickGuiScreen extends Screen {
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
-        int outerX = SIDE_MARGIN;
-        int outerY = TOP_MARGIN;
-        int outerW = width - SIDE_MARGIN * 2;
-        int panelY = outerY + HEADER_HEIGHT + PANEL_TOP_GAP;
-
-        int availableW = outerW - PANEL_GAP * 4;
-        int panelW = availableW / 5;
-
-        // Movement -> Auto Sprint.
-        int movementX = outerX + (panelW + PANEL_GAP);
-        int rowY = panelY + 52;
-
-        if (isInside(mouseX, mouseY, movementX + 6, rowY, panelW - 12, 40)) {
+        if (insideImageRect(mouseX, mouseY, AUTO_SPRINT_X, AUTO_SPRINT_Y, AUTO_SPRINT_W, AUTO_SPRINT_H)) {
             SimpleClient.toggleAutoSprint(client);
             return true;
         }
 
-        // Render -> Full Bright.
-        int renderX = outerX + 2 * (panelW + PANEL_GAP);
-
-        if (isInside(mouseX, mouseY, renderX + 6, rowY, panelW - 12, 40)) {
+        if (insideImageRect(mouseX, mouseY, FULLBRIGHT_X, FULLBRIGHT_Y, FULLBRIGHT_W, FULLBRIGHT_H)) {
             SimpleClient.toggleFullbright(client);
             return true;
         }
 
-        // Close button.
-        int closeX = outerX + outerW - 48;
-        if (isInside(mouseX, mouseY, closeX, outerY + 9, 38, 36)) {
+        if (insideImageRect(mouseX, mouseY, CLOSE_X, CLOSE_Y, CLOSE_W, CLOSE_H)) {
             close();
             return true;
         }
@@ -325,14 +167,22 @@ public class ClickGuiScreen extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    private boolean isInside(
+    private boolean insideImageRect(
             double mouseX,
             double mouseY,
-            int x,
-            int y,
-            int w,
-            int h
+            int imageX,
+            int imageY,
+            int imageW,
+            int imageH
     ) {
+        float sx = (float) width / IMAGE_WIDTH;
+        float sy = (float) height / IMAGE_HEIGHT;
+
+        double x = imageX * sx;
+        double y = imageY * sy;
+        double w = imageW * sx;
+        double h = imageH * sy;
+
         return mouseX >= x
                 && mouseX <= x + w
                 && mouseY >= y
@@ -348,46 +198,23 @@ public class ClickGuiScreen extends Screen {
             int radius,
             int color
     ) {
-        // Lightweight rounded rectangle made only from vanilla DrawContext fills.
         int r = Math.min(radius, Math.min(w, h) / 2);
 
         context.fill(x + r, y, x + w - r, y + h, color);
         context.fill(x, y + r, x + w, y + h - r, color);
 
-        context.fill(x + 2, y + 1, x + r + 1, y + r + 1, color);
-        context.fill(x + w - r - 1, y + 1, x + w - 2, y + r + 1, color);
-        context.fill(x + 2, y + h - r - 1, x + r + 1, y + h - 1, color);
-        context.fill(x + w - r - 1, y + h - r - 1, x + w - 2, y + h - 1, color);
-    }
-
-    private void drawRoundedRectOutline(
-            DrawContext context,
-            int x,
-            int y,
-            int w,
-            int h,
-            int radius,
-            int color
-    ) {
-        context.fill(x + radius, y, x + w - radius, y + 1, color);
-        context.fill(x + radius, y + h - 1, x + w - radius, y + h, color);
-        context.fill(x, y + radius, x + 1, y + h - radius, color);
-        context.fill(x + w - 1, y + radius, x + w, y + h - radius, color);
+        // Small corner blocks keep the shape smooth enough without
+        // introducing an additional rendering library.
+        context.fill(x + 1, y + 1, x + r, y + r, color);
+        context.fill(x + w - r, y + 1, x + w - 1, y + r, color);
+        context.fill(x + 1, y + h - r, x + r, y + h - 1, color);
+        context.fill(x + w - r, y + h - r, x + w - 1, y + h - 1, color);
     }
 
     @Override
     public boolean shouldPause() {
         return false;
     }
-
-    private static class Category {
-        private final String name;
-        private final int count;
-
-        private Category(String name, int count) {
-            this.name = name;
-            this.count = count;
-        }
-    }
 }
+
 
